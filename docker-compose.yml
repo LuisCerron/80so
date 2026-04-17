@@ -1,21 +1,21 @@
 services:
   db:
     image: mysql:8.0
-    container_name: parking_db
-    restart: unless-stopped
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 123456
-      MYSQL_DATABASE: db_estacionamiento_utp2
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-db_estacionamiento_utp2}
     ports:
       - "${HOST_PORT_DB:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./backup.sql:/docker-entrypoint-initdb.d/backup.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p123456"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-123456}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     networks:
       - parking_network
 
@@ -23,37 +23,45 @@ services:
     build:
       context: ./Backend
       dockerfile: Dockerfile
-    container_name: parking_backend
-    restart: unless-stopped
-    ports:
-      - "${HOST_PORT_BACKEND:-3000}:3000"
+    restart: always
+    expose:
+      - "3000"
     environment:
+      NODE_ENV: ${NODE_ENV:-production}
       DB_HOST: db
+      DB_PORT: 3306
       DB_USER: root
-      DB_PASSWORD: 123456
-      DB_NAME: db_estacionamiento_utp2
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      DB_NAME: ${MYSQL_DATABASE:-db_estacionamiento_utp2}
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     networks:
       - parking_network
 
   frontend:
     image: nginx:alpine
-    container_name: parking_frontend
-    restart: unless-stopped
+    restart: always
     ports:
       - "${HOST_PORT_FRONTEND:-8080}:80"
     volumes:
       - ./Fronted:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - parking_network
 
 networks:
   parking_network:
+    name: ${COMPOSE_PROJECT_NAME:-estacionamiento}_network
     driver: bridge
 
 volumes:

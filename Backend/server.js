@@ -955,3 +955,8 @@ app.get('/reportes/ocupacion-diaria/:zona', (req, res) => {
 app.listen(port, () => {
     console.log(`🚀 Servidor backend escuchando en http://localhost:${port}`);
 });
+
+// --- RUTA DE SALUD (para Docker healthcheck) ---
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
