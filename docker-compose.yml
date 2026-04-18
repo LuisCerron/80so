@@ -53,6 +53,7 @@ services:
     volumes:
       - ./Fronted:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./modelos de carros:/usr/share/nginx/html/modelos-de-carros:ro
     depends_on:
       backend:
         condition: service_healthy
