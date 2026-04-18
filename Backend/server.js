@@ -39,6 +39,10 @@ db.connect(err => {
 app.use(cors());
 app.use(express.json());
 
+// Middleware para servir imágenes de vehículos (carpeta "modelos de carros")
+const path = require('path');
+app.use('/modelos-de-carros', express.static(path.join(__dirname, '..', 'modelos de carros')));
+
 // --- INICIO DE RUTAS DE LA API ---
 
 

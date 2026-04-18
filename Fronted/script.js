@@ -683,7 +683,7 @@ function openImageModal(imageUrl, plate) {
     const modalCaption = document.getElementById('modalCaption');
     
     // Construimos la URL completa a la imagen
-    modalImage.src = `/modelos de carros/${imageUrl}`; // Ajusta esta ruta si tu carpeta es diferente
+    modalImage.src = `/modelos-de-carros/${imageUrl}`; // Carpeta configurada en el backend con express.static
     modalCaption.textContent = `Placa: ${plate}`;
     modal.style.display = 'flex';
 }
@@ -715,7 +715,7 @@ function openImageModal(imageUrl, plate) {
     const modalCaption = document.getElementById('modalCaption');
     
     // Construimos la URL completa a la imagen
-    modalImage.src = `/static/uploads/vehicles/${imageUrl}`; // Ajusta la ruta si es necesario
+    modalImage.src = `/modelos-de-carros/${imageUrl}`; // Carpeta configurada en el backend con express.static
     modalCaption.textContent = `Placa: ${plate}`;
     modal.style.display = 'flex';
 }
