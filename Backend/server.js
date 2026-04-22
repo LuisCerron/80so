@@ -18,22 +18,36 @@ const db = mysql.createConnection({
     database: process.env.DB_NAME || 'db_estacionamiento_utp2'
 });
 
-// 4. CONEXIÓN A LA BASE DE DATOS
-db.connect(err => {
-    if (err) {
-        console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-        console.error('!!! ERROR CRÍTICO AL CONECTAR A LA BASE DE DATOS !!!');
-        console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-        console.error('Mensaje de Error:', err.message);
-        console.error('Código de Error de MySQL:', err.code);
-        console.error('\nPOSIBLES SOLUCIONES:');
-        console.error('1. Asegúrate de que tu servidor MySQL (XAMPP, WAMP, etc.) esté en ejecución.');
-        console.error('2. Verifica que el `user` y `password` en este archivo sean correctos.');
-        console.error('3. Confirma que la base de datos "db_estacionamiento_utp2" exista.');
-        process.exit(1);
-    }
-    console.log('✅ Conexión exitosa a la base de datos MySQL: db_estacionamiento_utp2');
-});
+// 4. CONEXIÓN A LA BASE DE DATOS (con reintentos para Docker)
+const MAX_RETRIES = 10;
+const RETRY_DELAY_MS = 5000;
+
+function connectWithRetry(attempt = 1) {
+    db.connect(err => {
+        if (err) {
+            console.error(`⚠️  Intento ${attempt}/${MAX_RETRIES} - Error al conectar a MySQL:`, err.message);
+            if (attempt < MAX_RETRIES) {
+                console.log(`🔄 Reintentando en ${RETRY_DELAY_MS / 1000}s...`);
+                setTimeout(() => connectWithRetry(attempt + 1), RETRY_DELAY_MS);
+            } else {
+                console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+                console.error('!!! ERROR CRÍTICO AL CONECTAR A LA BASE DE DATOS !!!');
+                console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+                console.error('Mensaje de Error:', err.message);
+                console.error('Código de Error de MySQL:', err.code);
+                console.error('\nPOSIBLES SOLUCIONES:');
+                console.error('1. Asegúrate de que tu servidor MySQL esté en ejecución.');
+                console.error('2. Verifica que el `user` y `password` en este archivo sean correctos.');
+                console.error('3. Confirma que la base de datos "db_estacionamiento_utp2" exista.');
+                process.exit(1);
+            }
+        } else {
+            console.log('✅ Conexión exitosa a la base de datos MySQL: db_estacionamiento_utp2');
+        }
+    });
+}
+
+connectWithRetry();
 
 // 5. MIDDLEWARES
 app.use(cors());
@@ -955,12 +969,12 @@ app.get('/reportes/ocupacion-diaria/:zona', (req, res) => {
 });
 
 
-// --- INICIAR EL SERVIDOR ---
-app.listen(port, () => {
-    console.log(`🚀 Servidor backend escuchando en http://localhost:${port}`);
-});
-
 // --- RUTA DE SALUD (para Docker healthcheck) ---
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// --- INICIAR EL SERVIDOR ---
+app.listen(port, () => {
+    console.log(`🚀 Servidor backend escuchando en http://localhost:${port}`);
 });
